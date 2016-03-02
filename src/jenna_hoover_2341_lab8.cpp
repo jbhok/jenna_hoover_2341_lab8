@@ -15,8 +15,8 @@ float deltaTime = 0.0;
 int thisTime = 0;
 int lastTime = 0;
 
-//#include "plane.h"
-//#include "enemy.h"
+#include "plane.h"
+#include "balloon.h"
 
 #if defined (__APPLE__)
 #include "SDL2/SDL.h"
@@ -64,13 +64,13 @@ TTF_Font *font;
 SDL_Color colorP1 = {255, 255, 255, 255};
 
 //surface for the player hit text
-SDL_Surface *playerSurface, *enemySurface, *lilenemySurface;
+SDL_Surface *playerSurface, *balloonSurface;
 
 //surface for the player hit text
-SDL_Texture *playerTexture, *enemyTexture, *lilenemyTexture;
+SDL_Texture *playerTexture, *balloonTexture;
 
 //SDL rects foer ther plater hit texture
-SDL_Rect playerPos, enemyPos, lilenemyPos;
+SDL_Rect playerPos, balloonPos;
 
 int playerHealth = 100;
 
@@ -102,6 +102,42 @@ void PlayerText(SDL_Renderer *renderer){
 	SDL_FreeSurface(playerSurface);
 }
 
+void BalloonText(SDL_Renderer *renderer, int turretNum){
+	//fix for to_string problems on linux
+
+	string Result;
+
+	ostringstream convert;
+
+	convert << turretNum;
+
+	Result = convert.str();
+
+	//create the text for the font texture
+	//tempText = "Turret " + Result + "was the last hit";
+
+	////fotr when the game starts, still to no turret hit
+	//if(turretNum == 0){
+		//create the text for the font texture
+	//	tempText = "No Turret has been hit";
+	//}
+
+	//create sufrace
+	balloonSurface = TTF_RenderText_Solid(font, tempText.c_str(), colorP1);
+
+	//create texture
+	balloonTexture = SDL_CreateTextureFromSurface(renderer, balloonSurface);
+
+	//get the width and height of the texture
+	SDL_QueryTexture(balloonTexture, NULL, NULL, &balloonPos.w, &balloonPos.h);
+
+	SDL_FreeSurface(balloonSurface);
+
+
+}
+
+
+//main start *********************************************************************
 int main(int argc, char *argv[]){
 
 	// *****CREAT ETHE SDL WINDOW - START &&&&&&
@@ -115,7 +151,7 @@ int main(int argc, char *argv[]){
 	SDL_Renderer *renderer = NULL;
 
 	//create a SDL Window in the middle of the screen
-	window = SDL_CreateWindow("PaperPlane", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("Paper Planes", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, SDL_WINDOW_SHOWN);
 
 
 
@@ -146,17 +182,17 @@ int main(int argc, char *argv[]){
 	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
 
 	//load a music file
-	Mix_Music *bgm = Mix_LoadMUS((audio_dir + "Visager_-_19_-_Village_Dreaming_Loop").c_str());
+	Mix_Music *bgm = Mix_LoadMUS((audio_dir + "Visager_-_19_-_Village_Dreaming_Loop.mp3").c_str());
 
 	//if music file isnt' playing, play it
 	if(!Mix_PlayingMusic())
 		Mix_PlayMusic(bgm, -1);
 
 	//cREATE PLAYERS START*******************************************
-	//Plane plane1 = Plane(renderer, 0, images_dir.c_str(), audio_dir.c_str(), 50.0f,50.0f);
+	Plane plane1 = Plane(renderer, 0, images_dir.c_str(), audio_dir.c_str(), 50.0f,50.0f);
 
 	//cREATE TURRET START*******************************************
-	//Enemy enemy1 = Enemy(renderer, images_dir.c_str(), audio_dir.c_str(), 800.0f, 500.0f);
+	Balloon balloon1 = Balloon(renderer, images_dir.c_str(), audio_dir.c_str());
 
 
 	SDL_Texture *bkgd = IMG_LoadTexture(renderer, (images_dir + "bkgd.png").c_str());
@@ -187,14 +223,14 @@ int main(int argc, char *argv[]){
 	playerPos.y = 10;
 
 	//x and y for turrets text
-	enemyPos.x = 600;
-	enemyPos.y = 10;
+	balloonPos.x = 600;
+	balloonPos.y = 10;
 
 	//create the initial player text
 	PlayerText(renderer);
 
 	//create the initial turret text
-	//EnemyText(renderer, 0);
+	BalloonText(renderer, 0);
 
 
 	// MAIN GAME LOOP START ************
@@ -223,7 +259,7 @@ int main(int argc, char *argv[]){
 
 					if(e.cbutton.button == SDL_CONTROLLER_BUTTON_A){
 
-						tank1.OnControllerButton(e.cbutton);
+						plane1.OnControllerButton(e.cbutton);
 						break;
 					}
 				}
@@ -245,149 +281,98 @@ int main(int argc, char *argv[]){
 		const Sint16 Yvalue = SDL_GameControllerGetAxis(gGameController0, SDL_CONTROLLER_AXIS_LEFTY);
 
 		//pass to player 1
-		enemy1.OnControllerAxis(Xvalue, Yvalue);
+		plane1.OnControllerAxis(Xvalue, Yvalue);
 
 
 		//update player 1 tank************************************
-		enemy1.Update(deltaTime);
+		plane1.Update(deltaTime);
 
 
 		//move background
-		if((enemy1.posRect.x >= 1024 - enemy1.posRect.w) && (enemy1.Xvalue > 8000)){
+		if((plane1.posRect.x >= 1024 - plane1.posRect.w) && (plane1.Xvalue > 8000)){
 
 			//adjust position floats
-			X_pos -=(enemy1.speed)*deltaTime;
+			X_pos -=(plane1.speed)*deltaTime;
 			if((bkgdRect.x > -1024)){
 				bkgdRect.x = (int)(X_pos + 0.5f);
 				//move the turret
-				enemy1.TankMoveX(-enemy1.speed, deltaTime);
+				balloon1.TankMoveX(-plane1.speed, deltaTime);
 
 			}else{
 				X_pos = bkgdRect.x;
 			}
 		}
 
-		if((enemy1.posRect.x <= 0) && (enemy1.Xvalue < 8000)){
+		if((plane1.posRect.x <= 0) && (plane1.Xvalue < 8000)){
 
-			X_pos +=(enemy1.speed)*deltaTime;
+			X_pos +=(plane1.speed)*deltaTime;
 			if((bkgdRect.x <0)){
 				bkgdRect.x = (int)(X_pos + 0.5f);
 				//move the turret
-				enemy1.TankMoveX(enemy1.speed, deltaTime);
-
+				balloon1.TankMoveX(plane1.speed, deltaTime);
 			}else{
 				X_pos = bkgdRect.x;
 			}
 		}
 
 		//move the background up and down
-		if((enemy1.posRect.y >= 768 - enemy1.posRect.h) && (enemy1.Yvalue > 8000)){
+		if((plane1.posRect.y >= 768 - plane1.posRect.h) && (plane1.Yvalue > 8000)){
 
 			//adjust position floats
-			Y_pos +=(enemy1.speed) * deltaTime;
+			Y_pos +=(plane1.speed) * deltaTime;
 			if((bkgdRect.y > -768)){
 				bkgdRect.y = (int)(Y_pos + 0.5f);
 				//move the turret
-				enemy1.TankMoveY(enemy1.speed, deltaTime);
-
+				balloon1.TankMoveY(plane1.speed, deltaTime);
 			}else{
 				Y_pos = bkgdRect.y;
 			}
 		}
 
 		//move the background up and down
-		if((tank1.posRect.y <= 0 ) && (tank1.Yvalue < 8000)){
+		if((plane1.posRect.y <= 0 ) && (plane1.Yvalue < 8000)){
 
 			//adjust position floats
-			Y_pos += (tank1.speed) * deltaTime;
+			Y_pos += (plane1.speed) * deltaTime;
 			if((bkgdRect.y < 0)){
 				bkgdRect.y = (int)(Y_pos + 0.5f);
 				//move the turret
-				turret1.TankMoveY(tank1.speed, deltaTime);
-				turret2.TankMoveY(tank1.speed, deltaTime);
-				turret3.TankMoveY(tank1.speed, deltaTime);
-				turret4.TankMoveY(tank1.speed, deltaTime);
+				balloon1.TankMoveY(plane1.speed, deltaTime);
 			}else{
 				Y_pos = bkgdRect.y;
 			}
 		}
 
 
-		turret1.Update(deltaTime, tank1.posRect);
-		turret2.Update(deltaTime, tank1.posRect);
-		turret3.Update(deltaTime, tank1.posRect);
-		turret4.Update(deltaTime, tank1.posRect);
+balloon1.Update(deltaTime);
 
 		//check for hit from turret1
-		for(int i = 0; i < turret1.bulletList.size(); i++)
-		{
-			if(SDL_HasIntersection(&tank1.posRect, &turret1.bulletList[i].posRect)){
-				turret1.bulletList[i].Reset();
-				playerHealth--;
-				PlayerText(renderer);
-				break;
-			}
-		}
+		//for(int i = 0; i < turret1.bulletList.size(); i++)
+	//	{
+		//	if(SDL_HasIntersection(&tank1.posRect, &turret1.bulletList[i].posRect)){
+		//		turret1.bulletList[i].Reset();
+		//		playerHealth--;
+		//		PlayerText(renderer);
+		//		break;
+		//	}
+		//}
 
-		//check for hit from turret1
-		for(int i = 0; i < turret2.bulletList.size(); i++)
-		{
-			if(SDL_HasIntersection(&tank1.posRect, &turret2.bulletList[i].posRect)){
-				turret2.bulletList[i].Reset();
-				playerHealth--;
-				PlayerText(renderer);
-				break;
-			}
-		}
+		if(SDL_HasIntersection(&plane1.posRect, &balloon1.balloonRect)){
+					balloon1.Reset();
+					playerHealth--;
+					PlayerText(renderer);
+					break;
+					}
 
-		//check for hit from turret1
-		for(int i = 0; i < turret3.bulletList.size(); i++)
-		{
-			if(SDL_HasIntersection(&tank1.posRect, &turret3.bulletList[i].posRect)){
-				turret3.bulletList[i].Reset();
-				playerHealth--;
-				PlayerText(renderer);
-				break;
-			}
-		}
-
-		//check for hit from turret1
-		for(int i = 0; i < turret4.bulletList.size(); i++)
-		{
-			if(SDL_HasIntersection(&tank1.posRect, &turret4.bulletList[i].posRect)){
-				turret4.bulletList[i].Reset();
-				playerHealth--;
-				PlayerText(renderer);
-				break;
-			}
-		}
 
 
 		//check if the player hit a turret
-		for(int i = 0; i < tank1.bulletList.size(); i++)
+		for(int i = 0; i < plane1.bulletList.size(); i++)
 		{
 			//turret 1
-			if(SDL_HasIntersection(&turret1.baseRect, &tank1.bulletList[i].posRect)){
-				tank1.bulletList[i].Reset();
-				TurretText(renderer, 1);
-				break;
-			}
-			//turret 2
-			if(SDL_HasIntersection(&turret2.baseRect, &tank1.bulletList[i].posRect)){
-				tank1.bulletList[i].Reset();
-				TurretText(renderer, 2);
-				break;
-			}
-			//turret 3
-			if(SDL_HasIntersection(&turret3.baseRect, &tank1.bulletList[i].posRect)){
-				tank1.bulletList[i].Reset();
-				TurretText(renderer, 3);
-				break;
-			}
-			//turret 4
-			if(SDL_HasIntersection(&turret4.baseRect, &tank1.bulletList[i].posRect)){
-				tank1.bulletList[i].Reset();
-				TurretText(renderer, 4);
+			if(SDL_HasIntersection(&balloon1.balloonRect, &plane1.bulletList[i].posRect)){
+				plane1.bulletList[i].Reset();
+				BalloonText(renderer, 1);
 				break;
 			}
 
@@ -403,15 +388,15 @@ int main(int argc, char *argv[]){
 		SDL_RenderCopy(renderer, bkgd, NULL, &bkgdRect);
 
 		//draw the tank
-		tank1.Draw(renderer);
+		plane1.Draw(renderer);
 		//draw the tuuret
-		enemy1.Draw(renderer);
+		balloon1.Draw(renderer);
 
 		//drawt he player hit tetture
 		SDL_RenderCopy(renderer, playerTexture, NULL, &playerPos);
 
 		//Draw the turret hit texture using the vars texture and posRext
-		SDL_RenderCopy(renderer, turretTexture, NULL, &turretPos);
+		SDL_RenderCopy(renderer, balloonTexture, NULL, &balloonPos);
 
 		//present new buffer to screen
 		SDL_RenderPresent(renderer);
@@ -428,4 +413,3 @@ int main(int argc, char *argv[]){
 	return 0;
 
 }
-
