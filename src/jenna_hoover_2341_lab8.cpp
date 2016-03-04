@@ -17,6 +17,7 @@ int lastTime = 0;
 
 #include "plane.h"
 #include "balloon.h"
+//#include "canimation.h"
 
 #if defined (__APPLE__)
 #include "SDL2/SDL.h"
@@ -101,7 +102,7 @@ void PlayerText(SDL_Renderer *renderer){
 
 	SDL_FreeSurface(playerSurface);
 }
-
+/*
 void BalloonText(SDL_Renderer *renderer, int turretNum){
 	//fix for to_string problems on linux
 
@@ -135,7 +136,7 @@ void BalloonText(SDL_Renderer *renderer, int turretNum){
 
 
 }
-
+*/
 
 //main start *********************************************************************
 int main(int argc, char *argv[]){
@@ -150,6 +151,8 @@ int main(int argc, char *argv[]){
 	//create a SDL renderTarget - pointer
 	SDL_Renderer *renderer = NULL;
 
+	SDL_Rect explodeRect;
+
 	//create a SDL Window in the middle of the screen
 	window = SDL_CreateWindow("Paper Planes", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, SDL_WINDOW_SHOWN);
 
@@ -158,7 +161,7 @@ int main(int argc, char *argv[]){
 
 
 	//create an SDL RenderTaret
-	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	// *********CREATE THE SDL WINDOW - END **********
 
 	// *********caraubke creatuib - start**********
@@ -223,14 +226,14 @@ int main(int argc, char *argv[]){
 	playerPos.y = 10;
 
 	//x and y for turrets text
-	balloonPos.x = 600;
-	balloonPos.y = 10;
+	//balloonPos.x = 600;
+	//balloonPos.y = 10;
 
 	//create the initial player text
 	PlayerText(renderer);
 
 	//create the initial turret text
-	BalloonText(renderer, 0);
+	//BalloonText(renderer, 0);
 
 
 	// MAIN GAME LOOP START ************
@@ -372,7 +375,7 @@ balloon1.Update(deltaTime);
 			//turret 1
 			if(SDL_HasIntersection(&balloon1.balloonRect, &plane1.bulletList[i].posRect)){
 				plane1.bulletList[i].Reset();
-				BalloonText(renderer, 1);
+				//BalloonText(renderer, 1);
 				break;
 			}
 
@@ -386,6 +389,7 @@ balloon1.Update(deltaTime);
 
 		//dtaw the bkgd
 		SDL_RenderCopy(renderer, bkgd, NULL, &bkgdRect);
+
 
 		//draw the tank
 		plane1.Draw(renderer);
